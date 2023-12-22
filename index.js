@@ -41,29 +41,29 @@ async function run() {
 
         app.get('/tasks/:taskId', async (req, res) => {
             try {
-              const taskId = new ObjectId(req.params.taskId);
-          
-              // Validate taskId to ensure it's a valid ObjectId
-              if (!ObjectId.isValid(taskId)) {
-                return res.status(400).json({ error: 'Invalid task ID' });
-              }
-          
-              // Find the task by ID
-              const task = await tasksCollection.findOne({ _id: taskId });
-          
-              // Check if the task was found
-              if (!task) {
-                return res.status(404).json({ error: 'Task not found' });
-              }
-          
-              // Send the task in the response
-              res.json(task);
+                const taskId = new ObjectId(req.params.taskId);
+
+                // Validate taskId to ensure it's a valid ObjectId
+                if (!ObjectId.isValid(taskId)) {
+                    return res.status(400).json({ error: 'Invalid task ID' });
+                }
+
+                // Find the task by ID
+                const task = await tasksCollection.findOne({ _id: taskId });
+
+                // Check if the task was found
+                if (!task) {
+                    return res.status(404).json({ error: 'Task not found' });
+                }
+
+                // Send the task in the response
+                res.json(task);
             } catch (error) {
-              console.error('Error handling task retrieval:', error);
-              res.status(500).json({ error: 'Internal Server Error' });
+                console.error('Error handling task retrieval:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
             }
-          });
-          
+        });
+
 
         // Update the POST /tasks endpoint to set the default status to "to-do"
         app.post('/tasks', async (req, res) => {
@@ -82,39 +82,78 @@ async function run() {
                 res.status(500).json({ error: 'Internal Server Error' });
             }
         });
-        
+
         // Update the PUT /tasks/:taskId endpoint to handle only the status update
         app.patch('/tasks/:id', async (req, res) => {
             try {
-              const taskId = new ObjectId(req.params.id);
-              const { status } = req.body;
-          
-              // Validate taskId to ensure it's a valid ObjectId
-              if (!ObjectId.isValid(taskId)) {
-                return res.status(400).json({ error: 'Invalid task ID' });
-              }
-          
-              // Update the task using the ObjectId
-              const filter = { _id: taskId };
-              const update = { $set: { status } };
-          
-              const options = {
-                returnDocument: 'after',
-              };
-          
-              const updatedTask = await tasksCollection.findOneAndUpdate(filter, update, options);
-          
-              res.json({ updatedTask });
+                const taskId = new ObjectId(req.params.id);
+                const { status } = req.body;
+
+                // Validate taskId to ensure it's a valid ObjectId
+                if (!ObjectId.isValid(taskId)) {
+                    return res.status(400).json({ error: 'Invalid task ID' });
+                }
+
+                // Update the task using the ObjectId
+                const filter = { _id: taskId };
+                const update = { $set: { status } };
+
+                const options = {
+                    returnDocument: 'after',
+                };
+
+                const updatedTask = await tasksCollection.findOneAndUpdate(filter, update, options);
+
+                res.json({ updatedTask });
             } catch (error) {
-              console.error('Error handling task update:', error);
-              res.status(500).json({ error: 'Internal Server Error' });
+                console.error('Error handling task update:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
             }
-          });
-          
-        
+        });
 
 
 
+       // Update the PATCH /tasks/:taskId endpoint to handle updates
+       app.patch('/tasks/:taskId', async (req, res) => {
+        try {
+          const taskId = req.params.taskId;
+      
+          if (!ObjectId.isValid(taskId)) {
+            return res.status(400).json({ error: 'Invalid task ID' });
+          }
+      
+          const updatedData = req.body;
+          const filter = { _id: new ObjectId(taskId) };
+      
+          // Log the received payload
+          console.log('Received Update Payload:', updatedData);
+      
+          // Log the existing task before the update
+          const existingTaskBeforeUpdate = await tasksCollection.findOne(filter);
+          console.log('Existing Task Before Update:', existingTaskBeforeUpdate);
+      
+          // Update all fields using updateOne
+          const updateResult = await tasksCollection.updateOne(
+            filter,
+            {
+              $set: updatedData,
+            }
+          );
+      
+          // Log the update result
+          console.log('Update Result:', updateResult);
+      
+          // Log the existing task after the update
+          const existingTaskAfterUpdate = await tasksCollection.findOne(filter);
+          console.log('Existing Task After Update:', existingTaskAfterUpdate);
+      
+          res.json({ success: true, message: 'Task updated successfully' });
+        } catch (error) {
+          console.error('Error handling task update:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+        }
+      });
+      
 
 
 
@@ -155,6 +194,24 @@ async function run() {
             const result = await usersCollection.find().toArray();
             res.send(result);
         });
+
+        // users
+        app.get('/users/:email', async (req, res) => {
+            try {
+                const userEmail = req.params.email;
+                const user = await usersCollection.findOne({ email: userEmail });
+
+                if (user) {
+                    res.json(user);
+                } else {
+                    res.status(404).json({ error: 'User not found' });
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
+
 
         app.post('/users', async (req, res) => {
             try {
